@@ -1,6 +1,6 @@
 import { app } from '../backend/src/app'
 
-export const config = { runtime: 'edge' }
+export const config = { runtime: 'nodejs' }
 
 export default function handler(request: Request) {
   // Strip /api prefix before forwarding to Elysia
