@@ -1,9 +1,9 @@
-import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
+import { migrate } from 'drizzle-orm/libsql/migrator'
 import { db } from './index'
 
 console.log('⏳ Rodando migrations...')
 
-migrate(db, { migrationsFolder: './drizzle' })
+await migrate(db, { migrationsFolder: './drizzle' })
 
 console.log('✅ Migrations concluídas.')
 process.exit(0)

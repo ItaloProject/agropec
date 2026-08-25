@@ -1,13 +1,15 @@
-import { Database } from 'bun:sqlite'
-import { drizzle } from 'drizzle-orm/bun-sqlite'
+import { createClient } from '@libsql/client'
+import { drizzle } from 'drizzle-orm/libsql'
 import * as schema from './schema'
 
-const sqlite = new Database(process.env.DATABASE_URL ?? 'agropec.db', {
-  create: true,
-})
+// Local dev: file:agropec.db | Production: TURSO_URL
+const client = createClient(
+  process.env.TURSO_URL
+    ? { url: process.env.TURSO_URL, authToken: process.env.TURSO_TOKEN }
+    : { url: 'file:agropec.db' }
+)
 
-sqlite.exec('PRAGMA journal_mode = WAL;')
-sqlite.exec('PRAGMA foreign_keys = ON;')
+client.executeMultiple('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;')
 
-export const db = drizzle(sqlite, { schema })
-export { sqlite }
+export const db = drizzle(client, { schema })
+export { client as sqlite }
