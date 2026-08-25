@@ -1,35 +1,55 @@
 // @ts-nocheck
 export const config = { maxDuration: 30 }
 
-// O app é carregado sob demanda para que uma falha de inicialização (por
-// exemplo variável de ambiente ausente) vire uma resposta legível em vez
-// de um FUNCTION_INVOCATION_FAILED sem detalhe.
+// O runtime Node do Vercel entrega (req, res) no estilo Node, não um
+// Request/Response web. Este handler faz a ponte: monta um Request a
+// partir do req, entrega ao Elysia e escreve a Response de volta no res.
+// Devolver a Response sem escrever no res deixaria a requisição pendurada
+// até estourar o tempo limite.
+
 let appPromise
 
-export default async function handler(request: Request) {
+function montarHeaders(headersNode) {
+  const headers = new Headers()
+  for (const [nome, valor] of Object.entries(headersNode)) {
+    if (valor === undefined) continue
+    for (const v of Array.isArray(valor) ? valor : [valor]) headers.append(nome, v)
+  }
+  return headers
+}
+
+async function lerCorpo(req) {
+  if (req.method === 'GET' || req.method === 'HEAD') return undefined
+  const partes = []
+  for await (const parte of req) partes.push(parte)
+  return partes.length ? Buffer.concat(partes) : undefined
+}
+
+export default async function handler(req, res) {
   try {
     appPromise ??= import('../backend/src/app').then((m) => m.app)
     const app = await appPromise
 
+    const protocolo = req.headers['x-forwarded-proto'] ?? 'https'
+    const host = req.headers['x-forwarded-host'] ?? req.headers.host ?? 'localhost'
     // Remove o prefixo /api antes de repassar para o Elysia
-    const url = new URL(request.url)
-    url.pathname = url.pathname.replace(/^\/api/, '') || '/'
+    const caminho = (req.url || '/').replace(/^\/api/, '') || '/'
 
-    // Lê o corpo por completo: repassar o stream direto exigiria duplex
-    // half-open, que o runtime Node do Vercel não aceita.
-    const temCorpo = request.method !== 'GET' && request.method !== 'HEAD'
-    const body = temCorpo ? await request.arrayBuffer() : undefined
-
-    return app.handle(
-      new Request(url.toString(), {
-        method: request.method,
-        headers: request.headers,
-        body,
+    const resposta = await app.handle(
+      new Request(`${protocolo}://${host}${caminho}`, {
+        method: req.method,
+        headers: montarHeaders(req.headers),
+        body: await lerCorpo(req),
       })
     )
+
+    res.statusCode = resposta.status
+    resposta.headers.forEach((valor, nome) => res.setHeader(nome, valor))
+    res.end(Buffer.from(await resposta.arrayBuffer()))
   } catch (erro) {
-    appPromise = undefined
-    return new Response(
+    res.statusCode = 500
+    res.setHeader('content-type', 'application/json')
+    res.end(
       JSON.stringify(
         {
           erro: String(erro?.message ?? erro),
@@ -42,8 +62,7 @@ export default async function handler(request: Request) {
         },
         null,
         2
-      ),
-      { status: 500, headers: { 'content-type': 'application/json' } }
+      )
     )
   }
 }
