@@ -1,5 +1,5 @@
 <template>
-  <q-page class="std-page">
+  <div>
     <div class="page-header">
       <div>
         <h1>Estoque</h1>
@@ -21,7 +21,7 @@
               <span class="text-grey-6"> / mín {{ item.qtdMinimaAlerta }}</span>
             </div>
           </div>
-          <q-btn size="sm" unelevated color="orange-8" label="Comprar" to="/compras" no-caps />
+          <q-btn size="sm" unelevated color="orange-8" label="Comprar" @click="$emit('ir-compras')" no-caps />
         </div>
       </div>
     </template>
@@ -63,7 +63,7 @@
             </div>
             <div class="ec-m">
               <div class="ec-val">{{ item.insumo.custoPorUnidade ? `R$ ${item.insumo.custoPorUnidade.toFixed(2)}` : '—' }}</div>
-              <div class="ec-lbl">Custo/un</div>
+              <div class="ec-lbl">Custo/{{ item.insumo.unidade }}</div>
             </div>
           </div>
         </div>
@@ -117,7 +117,7 @@
             <q-select v-model="novoInsumo.unidade" :options="['kg','L','un','saco']" label="Unidade" outlined dense class="col" />
           </div>
           <div class="row q-gutter-sm">
-            <q-input v-model.number="novoInsumo.custoPorUnidade" type="number" label="Custo/unidade (R$)" outlined dense class="col" />
+            <q-input v-model.number="novoInsumo.custoPorUnidade" type="number" :label="`Custo/${novoInsumo.unidade} (R$)`" outlined dense class="col" />
             <q-input v-model.number="novoInsumo.qtdMinimaAlerta" type="number" label="Estoque mínimo" outlined dense class="col" />
           </div>
           <q-input v-model.number="novoInsumo.qtdInicial" type="number" label="Quantidade inicial" outlined dense />
@@ -128,13 +128,15 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
-  </q-page>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useEstoqueStore } from 'src/stores/estoque.store'
+
+defineEmits<{ 'ir-compras': [] }>()
 
 const $q = useQuasar()
 const estoqueStore = useEstoqueStore()
@@ -165,7 +167,7 @@ const colunas = [
   { name: 'nome',    label: 'Insumo',      field: (r: any) => r.insumo.nome,   sortable: true,  align: 'left' as const },
   { name: 'qtd',    label: 'Em estoque',   field: (r: any) => `${r.qtdAtual.toFixed(1)} ${r.insumo.unidade}`, sortable: true,  align: 'right' as const },
   { name: 'minimo', label: 'Estoque mín.', field: (r: any) => `${r.qtdMinimaAlerta ?? '—'} ${r.insumo.unidade}`, align: 'right' as const },
-  { name: 'custo',  label: 'Custo/un',     field: (r: any) => r.insumo.custoPorUnidade ? `R$ ${r.insumo.custoPorUnidade.toFixed(2)}` : '—', align: 'right' as const },
+  { name: 'custo',  label: 'Custo/un',     field: (r: any) => r.insumo.custoPorUnidade ? `R$ ${r.insumo.custoPorUnidade.toFixed(2)}/${r.insumo.unidade}` : '—', align: 'right' as const },
   { name: 'status', label: 'Status',       field: 'status', align: 'center' as const },
 ]
 

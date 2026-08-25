@@ -35,9 +35,10 @@ export const lotesRoutes = new Elysia({ prefix: '/lotes' })
   })
 
   .post('/', async ({ usuarioId, body }) => {
+    const codigo = body.codigo || `L${Date.now().toString(36).toUpperCase().slice(-5)}`
     const [lote] = await db
       .insert(lotes)
-      .values({ ...body, usuarioId, qtdAtual: body.qtdInicial })
+      .values({ ...body, codigo, usuarioId, qtdAtual: body.qtdInicial })
       .returning()
     return lote
   }, {

@@ -1,5 +1,140 @@
 <template>
   <q-page class="std-page">
+    <div class="guias-header q-mb-md">
+      <div class="guias-tabs">
+        <button class="guia-btn" :class="{ active: guia === 'alimentados' }" @click="guia = 'alimentados'">
+          🍽️ Alimentados
+        </button>
+        <button class="guia-btn" :class="{ active: guia === 'alimentacao' }" @click="guia = 'alimentacao'">
+          🌾 Alimentação
+        </button>
+        <button class="guia-btn" :class="{ active: guia === 'compras' }" @click="guia = 'compras'">
+          🛒 Compras
+        </button>
+        <button class="guia-btn" :class="{ active: guia === 'estoque' }" @click="guia = 'estoque'">
+          📦 Estoque
+        </button>
+      </div>
+    </div>
+
+    <!-- ── COMPRAS ───────────────────────────────────────────────── -->
+    <ComprasPage v-if="guia === 'compras'" />
+
+    <!-- ── ESTOQUE ───────────────────────────────────────────────── -->
+    <EstoquePage v-if="guia === 'estoque'" @ir-compras="guia = 'compras'" />
+
+    <!-- ── ALIMENTADOS ──────────────────────────────────────────── -->
+    <template v-if="guia === 'alimentados'">
+      <div class="page-header">
+        <div>
+          <h1>Alimentados Hoje</h1>
+          <div class="page-subtitle">Status de fornecimento — {{ dataHojeFmt }}</div>
+        </div>
+        <q-btn flat round icon="refresh" @click="carregarHistorico" :loading="carregandoHist" />
+      </div>
+
+      <div v-if="carregandoHist" class="q-py-xl text-center"><q-spinner color="primary" size="2em" /></div>
+
+      <template v-else>
+        <!-- ── Alerta: não alimentados ontem ─────────────────────── -->
+        <div v-if="lotesNaoAlimentadosOntem.length" class="alerta-ontem q-mb-lg">
+          <div class="alerta-ontem-header">
+            <span class="alerta-icon">⚠️</span>
+            <strong>{{ lotesNaoAlimentadosOntem.length }} lote{{ lotesNaoAlimentadosOntem.length > 1 ? 's' : '' }} não alimentado{{ lotesNaoAlimentadosOntem.length > 1 ? 's' : '' }} ontem</strong>
+          </div>
+          <div class="alerta-ontem-chips">
+            <span v-for="l in lotesNaoAlimentadosOntem" :key="l.id" class="alerta-lote-chip">
+              {{ getEmoji(l.especie) }} {{ l.nome }}
+            </span>
+          </div>
+        </div>
+
+        <!-- ── Cards de status ───────────────────────────────────── -->
+        <div class="alim-dash-grid q-mb-xl">
+          <div
+            v-for="item in alimentadosHoje" :key="item.lote.id"
+            class="alim-dash-card"
+            :class="item.feedCount === 0 ? 'nao-alimentado' : item.feedCount === 3 ? 'completo' : 'parcial'"
+          >
+            <!-- Badge alerta ontem -->
+            <div v-if="item.naoAlimentadoOntem" class="badge-ontem">Não alimentado ontem</div>
+
+            <!-- Anel SVG -->
+            <div class="anel-wrap">
+              <svg viewBox="0 0 100 100" class="anel-svg">
+                <circle cx="50" cy="50" r="40" class="anel-bg" />
+                <circle
+                  cx="50" cy="50" r="40"
+                  class="anel-progress"
+                  :style="{
+                    strokeDasharray: '251.3',
+                    strokeDashoffset: 251.3 * (1 - item.feedCount / 3),
+                    stroke: item.feedCount === 0 ? '#ef9a9a' : item.feedCount === 3 ? '#66bb6a' : '#ffb74d'
+                  }"
+                />
+              </svg>
+              <div class="anel-center">
+                <div class="anel-emoji">{{ getEmoji(item.lote.especie) }}</div>
+                <div class="anel-frac">{{ item.feedCount }}<span>/3</span></div>
+              </div>
+            </div>
+
+            <div class="dash-nome">{{ item.lote.nome }}</div>
+            <div class="dash-animais">{{ item.lote.qtdAtual }} animais</div>
+
+            <div class="dash-turnos">
+              <div class="turno-dot" :class="{ ok: item.manha }">
+                <span>🌅</span>
+                <div class="td-label">Manhã</div>
+                <div v-if="item.manha" class="td-kg">{{ item.kgManha.toFixed(0) }}kg</div>
+              </div>
+              <div class="turno-dot" :class="{ ok: item.tarde }">
+                <span>☀️</span>
+                <div class="td-label">Tarde</div>
+                <div v-if="item.tarde" class="td-kg">{{ item.kgTarde.toFixed(0) }}kg</div>
+              </div>
+              <div class="turno-dot" :class="{ ok: item.noite }">
+                <span>🌙</span>
+                <div class="td-label">Noite</div>
+                <div v-if="item.noite" class="td-kg">{{ item.kgNoite.toFixed(0) }}kg</div>
+              </div>
+            </div>
+
+            <div v-if="item.totalKg > 0" class="dash-total">{{ item.totalKg.toFixed(1) }} kg hoje</div>
+            <div v-else class="dash-nenhum">Não alimentado hoje</div>
+          </div>
+        </div>
+
+        <!-- ── Histórico recente ──────────────────────────────────── -->
+        <div class="hist-recente-header">
+          <div class="hist-title">HISTÓRICO RECENTE</div>
+        </div>
+        <div v-if="!historico.length" class="empty-state">
+          <div class="empty-icon">🌾</div>
+          <div class="empty-msg">Nenhum fornecimento registrado</div>
+        </div>
+        <div v-else class="historico-list">
+          <div v-for="reg in historico.slice(0, 20)" :key="reg.id" class="historico-item">
+            <div class="hist-badge">{{ getEmoji(reg.lote?.especie) }}</div>
+            <div class="hist-body">
+              <div class="hist-nome">{{ reg.lote?.nome }}</div>
+              <div class="hist-sub">
+                {{ reg.insumo?.nome }} ·
+                {{ turnos.find(t => t.valor === reg.turno)?.emoji }}
+                {{ turnos.find(t => t.valor === reg.turno)?.label }}
+              </div>
+            </div>
+            <div class="hist-right">
+              <div class="hist-qtd">{{ reg.qtdKgTotal }} kg</div>
+              <div class="hist-data">{{ formatarData(reg.data) }}</div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </template>
+
+    <!-- ── ALIMENTAÇÃO ───────────────────────────────────────────── -->
+    <template v-if="guia === 'alimentacao'">
     <div class="page-header">
       <div>
         <h1>Alimentação</h1>
@@ -64,19 +199,28 @@
 
             <div class="form-label">RAÇÃO / INSUMO</div>
             <div v-if="!estoqueFiltrado.length" class="empty-step">
-              Nenhuma ração em estoque. <router-link to="/compras">Registrar compra →</router-link>
+              Nenhuma ração em estoque. <a href="#" @click.prevent="guia = 'compras'" style="color:#1565c0">Registrar compra →</a>
             </div>
             <div
               v-for="item in estoqueFiltrado" :key="item.id"
-              class="select-item" :class="{ selected: form.insumoId === item.insumo.id }"
-              @click="form.insumoId = item.insumo.id; insumoSelecionado = item"
+              class="select-item"
+              :class="{
+                selected: form.insumoId === item.insumo.id,
+                'sem-estoque': item.qtdAtual <= 0
+              }"
+              @click="item.qtdAtual > 0 && (form.insumoId = item.insumo.id, insumoSelecionado = item)"
             >
               <span class="select-emoji">🌾</span>
               <div class="select-body">
                 <div class="select-name">{{ item.insumo.nome }}</div>
                 <div class="select-sub">
-                  {{ item.qtdAtual.toFixed(1) }} {{ item.insumo.unidade }} em estoque
-                  <span v-if="item.qtdAtual <= item.qtdMinimaAlerta" class="text-orange-8"> · ⚠️ crítico</span>
+                  <template v-if="item.qtdAtual <= 0">
+                    Sem estoque
+                  </template>
+                  <template v-else>
+                    {{ item.qtdAtual.toFixed(1) }} {{ item.insumo.unidade }} em estoque
+                    <span v-if="item.qtdAtual <= item.qtdMinimaAlerta" class="text-orange-8"> · ⚠️ crítico</span>
+                  </template>
                 </div>
               </div>
               <q-icon v-if="form.insumoId === item.insumo.id" name="check_circle" color="primary" />
@@ -302,6 +446,9 @@
         </div>
       </div>
     </div>
+    </template>
+    <!-- ── FIM ALIMENTAÇÃO ──────────────────────────────────────── -->
+
   </q-page>
 </template>
 
@@ -312,6 +459,10 @@ import { api } from 'src/boot/axios'
 import { useLotesStore } from 'src/stores/lotes.store'
 import { useEstoqueStore } from 'src/stores/estoque.store'
 import { useEspecies } from 'src/composables/useEspecies'
+import ComprasPage from './ComprasPage.vue'
+import EstoquePage from './EstoquePage.vue'
+
+const guia = ref<'alimentacao' | 'compras' | 'estoque' | 'alimentados'>('alimentados')
 
 const $q = useQuasar()
 const lotesStore = useLotesStore()
@@ -394,6 +545,37 @@ const podeAvancar = computed(() => {
 })
 
 const hoje = new Date().toISOString().split('T')[0]!
+const ontem = new Date(Date.now() - 86_400_000).toISOString().split('T')[0]!
+const dataHojeFmt = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full' }).format(new Date())
+
+const alimentadosHoje = computed(() => {
+  const lista = lotesStore.lotesAtivos.map(lote => {
+    const regsHoje  = historico.value.filter(r => r.loteId === lote.id && r.data === hoje)
+    const regsOntem = historico.value.filter(r => r.loteId === lote.id && r.data === ontem)
+    const kg = (regs: any[], turno: string) =>
+      regs.filter(r => r.turno === turno).reduce((s: number, r: any) => s + (r.qtdKgTotal ?? 0), 0)
+    const manha = regsHoje.some(r => r.turno === 'manha')
+    const tarde  = regsHoje.some(r => r.turno === 'tarde')
+    const noite  = regsHoje.some(r => r.turno === 'noite')
+    const naoAlimentadoOntem = regsOntem.length === 0
+    return {
+      lote,
+      manha, tarde, noite,
+      kgManha: kg(regsHoje, 'manha'), kgTarde: kg(regsHoje, 'tarde'), kgNoite: kg(regsHoje, 'noite'),
+      feedCount: [manha, tarde, noite].filter(Boolean).length,
+      totalKg: regsHoje.reduce((s: number, r: any) => s + (r.qtdKgTotal ?? 0), 0),
+      naoAlimentadoOntem,
+    }
+  })
+  return lista.sort((a, b) => {
+    if (a.naoAlimentadoOntem !== b.naoAlimentadoOntem) return a.naoAlimentadoOntem ? -1 : 1
+    return a.feedCount - b.feedCount
+  })
+})
+
+const lotesNaoAlimentadosOntem = computed(() =>
+  alimentadosHoje.value.filter(i => i.naoAlimentadoOntem).map(i => i.lote)
+)
 
 const resumoDia = computed(() => {
   const registrosHoje = historico.value.filter(r => r.data === hoje)
@@ -479,7 +661,8 @@ async function confirmar() {
     loteSelecionado.value = null
     insumoSelecionado.value = null
     sugestaoKg.value = null
-    await Promise.all([estoqueStore.carregar(), carregarHistorico()])
+    // reload in background — errors here don't affect the confirmed registration
+    Promise.all([estoqueStore.carregar(), carregarHistorico()])
   } catch (e: any) {
     $q.notify({ type: 'negative', message: e.response?.data?.erro ?? 'Erro ao registrar' })
   } finally {
@@ -492,6 +675,8 @@ async function carregarHistorico() {
   try {
     const params = filtroLoteId.value ? `?loteId=${filtroLoteId.value}&limite=50` : '?limite=50'
     historico.value = await api.get(`/alimentacao${params}`).then(r => r.data)
+  } catch {
+    // silently ignore — UI shows current state
   } finally {
     carregandoHist.value = false
   }
@@ -550,6 +735,18 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* ── Guias ───────────────────────────────────────────────────── */
+.guias-header { display: flex; align-items: center; }
+.guias-tabs {
+  display: flex; background: #f0f0f0; border-radius: 12px; padding: 4px; gap: 2px;
+}
+.guia-btn {
+  padding: 7px 18px; border: none; border-radius: 9px;
+  font-size: .82rem; font-weight: 600; cursor: pointer; transition: all .2s;
+  background: transparent; color: #888;
+}
+.guia-btn.active { background: white; color: #2e7d32; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+
 .alim-layout {
   display: grid;
   grid-template-columns: 460px 1fr;
@@ -612,6 +809,11 @@ onMounted(async () => {
 }
 .select-item:hover    { border-color: #81c784; background: #f9fbe7; }
 .select-item.selected { border-color: #2e7d32; background: #e8f5e9; }
+.select-item.sem-estoque {
+  border-color: #ffcdd2; background: #fff5f5;
+  cursor: not-allowed; opacity: 0.7;
+}
+.select-item.sem-estoque:hover { border-color: #ffcdd2; background: #fff5f5; }
 .select-emoji { font-size: 1.4rem; width: 32px; text-align: center; }
 .select-body  { flex: 1; min-width: 0; }
 .select-name  { font-weight: 600; font-size: .9rem; }
@@ -738,4 +940,84 @@ onMounted(async () => {
 @media (max-width: 599px) {
   .form-card { padding: 16px; }
 }
+
+/* ── Dashboard Alimentados ─────────────────────────────────────── */
+.alim-dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.alim-dash-card {
+  background: white; border-radius: 16px; padding: 20px 16px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.07); border: 2px solid transparent;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  transition: border-color .2s;
+}
+.alim-dash-card.nao-alimentado { border-color: #ffcdd2; background: #fff8f8; }
+.alim-dash-card.parcial        { border-color: #ffe0b2; background: #fffbf5; }
+.alim-dash-card.completo       { border-color: #c8e6c9; background: #f5fbf5; }
+
+/* Anel SVG */
+.anel-wrap { position: relative; width: 100px; height: 100px; }
+.anel-svg  { width: 100%; height: 100%; transform: rotate(-90deg); }
+.anel-bg   { fill: none; stroke: #f0f0f0; stroke-width: 10; }
+.anel-progress {
+  fill: none; stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset .5s ease, stroke .3s;
+}
+.anel-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.anel-emoji { font-size: 1.5rem; line-height: 1; }
+.anel-frac  { font-size: .85rem; font-weight: 700; color: #333; }
+.anel-frac span { font-weight: 400; color: #aaa; font-size: .75rem; }
+
+/* Info */
+.dash-nome    { font-weight: 700; font-size: .95rem; color: #1b5e20; text-align: center; }
+.dash-animais { font-size: .72rem; color: #aaa; }
+
+/* Turnos */
+.dash-turnos { display: flex; gap: 10px; margin-top: 4px; }
+.turno-dot {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 10px; border-radius: 10px;
+  background: #f5f5f5; opacity: .45;
+  font-size: 1.1rem; min-width: 52px;
+  transition: opacity .2s, background .2s;
+}
+.turno-dot.ok { background: #e8f5e9; opacity: 1; }
+.td-label { font-size: .6rem; color: #888; text-transform: uppercase; font-weight: 600; }
+.td-kg    { font-size: .7rem; color: #2e7d32; font-weight: 700; }
+
+.dash-total  { font-size: .78rem; color: #2e7d32; font-weight: 600; }
+.dash-nenhum { font-size: .75rem; color: #e57373; font-weight: 500; }
+
+/* Badge ontem */
+.badge-ontem {
+  font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+  background: #ff5722; color: white; padding: 3px 10px; border-radius: 20px;
+  margin-bottom: 4px;
+}
+
+/* Alerta ontem */
+.alerta-ontem {
+  background: #fff3e0; border: 1.5px solid #ffb74d; border-radius: 14px;
+  padding: 14px 18px;
+}
+.alerta-ontem-header {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .9rem; color: #e65100; margin-bottom: 10px;
+}
+.alerta-icon { font-size: 1.2rem; }
+.alerta-ontem-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.alerta-lote-chip {
+  background: #ffe0b2; border: 1px solid #ffb74d; border-radius: 20px;
+  padding: 4px 12px; font-size: .78rem; font-weight: 600; color: #e65100;
+}
+
+/* Histórico recente */
+.hist-recente-header { margin-bottom: 10px; }
 </style>

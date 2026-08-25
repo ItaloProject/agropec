@@ -32,6 +32,8 @@ export const useEstoqueStore = defineStore('estoque', () => {
     try {
       const { data } = await api.get('/estoque')
       items.value = data
+    } catch {
+      // silently ignore — UI shows empty state
     } finally {
       carregando.value = false
     }

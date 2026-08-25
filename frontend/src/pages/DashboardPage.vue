@@ -78,6 +78,32 @@
       </div>
     </div>
 
+    <!-- Valor total do rebanho -->
+    <div class="valor-total-section q-mb-lg">
+      <div class="valor-total-card">
+        <div class="vt-left">
+          <div class="vt-label">💎 Valor estimado do rebanho</div>
+          <div class="vt-total">{{ fmtBRL(valorTotalRebanho) }}</div>
+          <div class="vt-sub">baseado em peso médio × preço de mercado</div>
+        </div>
+        <div class="vt-lotes">
+          <div
+            v-for="lote in lotesStore.lotesAtivos" :key="lote.id"
+            class="vt-lote-item"
+          >
+            <span class="vt-emoji">{{ getEmoji(lote.especie) }}</span>
+            <div class="vt-lote-info">
+              <div class="vt-lote-nome">{{ lote.nome }}</div>
+              <div class="vt-lote-detalhe">
+                {{ lote.qtdAtual }} cab · {{ (lote.pesoMedioAtual ?? lote.pesoMedioEntrada ?? 0).toFixed(0) }} kg/cab
+              </div>
+            </div>
+            <div class="vt-lote-valor">{{ fmtBRL(valorLote(lote)) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Ações rápidas + Lotes: side-by-side on desktop -->
     <div class="dash-body">
       <!-- Coluna esquerda: ações rápidas -->
@@ -188,6 +214,11 @@
                 <div class="val">{{ diasConfinamento(lote.dataEntrada) }}</div>
                 <div class="lbl">Dias</div>
               </div>
+              <div class="metric-divider" />
+              <div class="metric">
+                <div class="val val-green">{{ fmtBRL(valorLote(lote)) }}</div>
+                <div class="lbl">Valor est.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -205,9 +236,39 @@ import { useEspecies } from 'src/composables/useEspecies'
 
 const authStore = useAuthStore()
 const lotesStore = useLotesStore()
+const { getEmoji } = useEspecies()
 
 const dashboard = ref<any>(null)
 const carregando = ref(false)
+
+const PRECO_KG: Record<string, number> = {
+  bovino_corte: 25,   bovino_leite: 18,
+  suino_corte: 12,
+  avicultura_corte: 8, avicultura_postura: 15,
+  ovino_corte: 30,    ovino_leite: 22,
+  caprino_corte: 28,  caprino_leite: 20,
+  equino_trabalho: 50,
+  piscicultura_consumo: 10,
+}
+
+function precoKg(lote: any) {
+  return PRECO_KG[`${lote.especie}_${lote.finalidade}`] ?? PRECO_KG[`${lote.especie}_corte`] ?? 15
+}
+
+function valorLote(lote: any) {
+  const peso = lote.pesoMedioAtual ?? lote.pesoMedioEntrada ?? 0
+  return lote.qtdAtual * peso * precoKg(lote)
+}
+
+const valorTotalRebanho = computed(() =>
+  lotesStore.lotesAtivos.reduce((s, l) => s + valorLote(l), 0)
+)
+
+function fmtBRL(v: number) {
+  if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`
+  if (v >= 1_000)     return `R$ ${(v / 1_000).toFixed(1)}k`
+  return `R$ ${v.toFixed(0)}`
+}
 
 const dataAtual = new Intl.DateTimeFormat('pt-BR', {
   weekday: 'long', day: 'numeric', month: 'long',
@@ -545,4 +606,52 @@ onMounted(carregar)
 
 .empty-icon { font-size: 3rem; margin-bottom: 8px; }
 .empty-msg  { color: #aaa; font-size: 0.9rem; }
+
+/* ── Valor total do rebanho ──────────────────────────────────── */
+.valor-total-section {}
+.valor-total-card {
+  background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  color: white;
+  box-shadow: 0 4px 20px rgba(27,94,32,.3);
+}
+
+@media (max-width: 700px) {
+  .valor-total-card { flex-direction: column; gap: 16px; }
+}
+
+.vt-left { flex-shrink: 0; }
+.vt-label {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .6px; opacity: .75; margin-bottom: 6px;
+}
+.vt-total {
+  font-size: 2rem; font-weight: 700; line-height: 1; margin-bottom: 4px;
+}
+.vt-sub { font-size: .68rem; opacity: .6; }
+
+.vt-lotes {
+  flex: 1; display: flex; flex-direction: column; gap: 8px;
+  border-left: 1px solid rgba(255,255,255,.2);
+  padding-left: 24px;
+}
+@media (max-width: 700px) {
+  .vt-lotes { border-left: none; border-top: 1px solid rgba(255,255,255,.2); padding-left: 0; padding-top: 12px; }
+}
+
+.vt-lote-item {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.1); border-radius: 10px; padding: 8px 12px;
+}
+.vt-emoji { font-size: 1.2rem; }
+.vt-lote-info { flex: 1; min-width: 0; }
+.vt-lote-nome { font-weight: 600; font-size: .88rem; }
+.vt-lote-detalhe { font-size: .68rem; opacity: .7; }
+.vt-lote-valor { font-weight: 700; font-size: .95rem; flex-shrink: 0; }
+
+.val-green { color: #2e7d32; }
 </style>

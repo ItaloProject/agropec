@@ -30,6 +30,8 @@ export const useLotesStore = defineStore('lotes', () => {
       const params = new URLSearchParams({ ativo: 'true', ...filtros })
       const { data } = await api.get(`/lotes?${params}`)
       lotes.value = data
+    } catch {
+      // silently ignore — UI shows empty state
     } finally {
       carregando.value = false
     }

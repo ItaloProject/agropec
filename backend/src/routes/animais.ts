@@ -5,11 +5,18 @@ import { db } from '../db'
 import { animais, lotes } from '../db/schema'
 import { authGuard } from '../middleware/auth'
 
+type StatusAnimal = 'ativo' | 'vendido' | 'morto' | 'quarentena'
+
 export const animaisRoutes = new Elysia({ prefix: '/animais' })
   .use(authGuard)
 
   .get('/', async ({ usuarioId, query }) => {
-    const filtros = [eq(animais.usuarioId, usuarioId), eq(animais.status, 'ativo')]
+    const filtros = [eq(animais.usuarioId, usuarioId)]
+    if (query.status && query.status !== 'todos') {
+      filtros.push(eq(animais.status, query.status as StatusAnimal))
+    } else if (!query.status) {
+      filtros.push(eq(animais.status, 'ativo'))
+    }
     if (query.loteId) filtros.push(eq(animais.loteId, Number(query.loteId)))
 
     return db.query.animais.findMany({
@@ -18,7 +25,8 @@ export const animaisRoutes = new Elysia({ prefix: '/animais' })
     })
   }, {
     query: t.Object({
-      loteId: t.Optional(t.String()),
+      loteId:  t.Optional(t.String()),
+      status:  t.Optional(t.String()),
     }),
   })
 
@@ -41,5 +49,24 @@ export const animaisRoutes = new Elysia({ prefix: '/animais' })
       valorCompra: t.Optional(t.Number()),
       pesoEntrada: t.Optional(t.Number()),
       observacao: t.Optional(t.String()),
+    }),
+  })
+
+  .patch('/:id/status', async ({ usuarioId, params, body, set }) => {
+    const animal = await db.query.animais.findFirst({
+      where: and(eq(animais.id, Number(params.id)), eq(animais.usuarioId, usuarioId)),
+    })
+    if (!animal) { set.status = 404; return { erro: 'Animal não encontrado' } }
+
+    const [atualizado] = await db.update(animais)
+      .set({ status: body.status as StatusAnimal })
+      .where(eq(animais.id, Number(params.id)))
+      .returning()
+
+    return atualizado
+  }, {
+    params: t.Object({ id: t.String() }),
+    body: t.Object({
+      status: t.Union([t.Literal('ativo'), t.Literal('vendido'), t.Literal('morto'), t.Literal('quarentena')]),
     }),
   })

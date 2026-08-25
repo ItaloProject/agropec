@@ -62,8 +62,8 @@ export async function registrarAlimentacao(
 
   const novaQtd = estoqueItem.qtdAtual - input.qtdKgTotal
 
-  const resultado = db.transaction((tx) => {
-    const [registro] = tx
+  const resultado = await db.transaction(async (tx) => {
+    const [registro] = await tx
       .insert(registrosAlimentacao)
       .values({
         loteId: input.loteId,
@@ -78,9 +78,8 @@ export async function registrarAlimentacao(
         observacao: input.observacao,
       })
       .returning()
-      .all()
 
-    const [movimentacao] = tx
+    const [movimentacao] = await tx
       .insert(movimentacoesEstoque)
       .values({
         estoqueId: estoqueItem.id,
@@ -92,20 +91,17 @@ export async function registrarAlimentacao(
         observacao: `Alimentação lote: ${lote.nome} | Turno: ${input.turno}`,
       })
       .returning()
-      .all()
 
-    tx.update(estoque)
+    await tx.update(estoque)
       .set({
         qtdAtual: novaQtd,
         atualizadoEm: new Date().toISOString(),
       })
       .where(eq(estoque.id, estoqueItem.id))
-      .run()
 
-    tx.update(registrosAlimentacao)
+    await tx.update(registrosAlimentacao)
       .set({ movimentacaoEstoqueId: movimentacao.id })
       .where(eq(registrosAlimentacao.id, registro.id))
-      .run()
 
     return registro
   })

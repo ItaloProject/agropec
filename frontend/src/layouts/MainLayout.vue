@@ -123,21 +123,18 @@ onUnmounted(() => {
 
 const navItems = [
   { to: '/dashboard',   icon: '📊', label: 'Dashboard' },
-  { to: '/lotes',       icon: '🏷️', label: 'Lotes' },
+  { to: '/lotes',       icon: '🏷️', label: 'Lotes & Animais' },
   { to: '/alimentacao', icon: '🌾', label: 'Alimentação' },
-  { to: '/animais',     icon: '🐄', label: 'Animais' },
   { to: '/pesagem',     icon: '⚖️', label: 'Pesagem' },
-  { to: '/estoque',     icon: '📦', label: 'Estoque', divider: true },
-  { to: '/compras',     icon: '🛒', label: 'Compras' },
   { to: '/saude',       icon: '💊', label: 'Saúde Animal' },
   { to: '/relatorios',  icon: '📋', label: 'Relatórios' },
 ]
 
 const bottomNavItems = [
   { to: '/dashboard',   icon: '📊', label: 'Início' },
-  { to: '/alimentacao', icon: '🌾', label: 'Ração' },
   { to: '/lotes',       icon: '🏷️', label: 'Lotes' },
-  { to: '/estoque',     icon: '📦', label: 'Estoque' },
+  { to: '/alimentacao', icon: '🌾', label: 'Alimentação' },
+  { to: '/pesagem',     icon: '⚖️', label: 'Pesagem' },
 ]
 
 const currentTab = computed(() => route.path)
