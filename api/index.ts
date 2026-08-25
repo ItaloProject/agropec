@@ -1,4 +1,8 @@
 // @ts-nocheck
+// O import precisa ser estático: com import dinâmico o Vercel não rastreia
+// backend/src e o pacote da função sai sem esses arquivos.
+import { app } from '../backend/src/app'
+
 export const config = { maxDuration: 30 }
 
 // O runtime Node do Vercel entrega (req, res) no estilo Node, não um
@@ -6,8 +10,6 @@ export const config = { maxDuration: 30 }
 // partir do req, entrega ao Elysia e escreve a Response de volta no res.
 // Devolver a Response sem escrever no res deixaria a requisição pendurada
 // até estourar o tempo limite.
-
-let appPromise
 
 function montarHeaders(headersNode) {
   const headers = new Headers()
@@ -27,9 +29,6 @@ async function lerCorpo(req) {
 
 export default async function handler(req, res) {
   try {
-    appPromise ??= import('../backend/src/app').then((m) => m.app)
-    const app = await appPromise
-
     const protocolo = req.headers['x-forwarded-proto'] ?? 'https'
     const host = req.headers['x-forwarded-host'] ?? req.headers.host ?? 'localhost'
     // Remove o prefixo /api antes de repassar para o Elysia
