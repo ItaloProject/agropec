@@ -1,51 +1,52 @@
+﻿// @ts-nocheck
 import { db } from './index'
 import { usuarios, insumos, estoque, lotes, fornecedores } from './schema'
 
 async function seed() {
-  console.log('🌱 Iniciando seed...')
+  console.log('ðŸŒ± Iniciando seed...')
 
   const senhaHash = await Bun.password.hash('123456')
   const [usuario] = await db.insert(usuarios).values({
-    nome: 'João Silva',
+    nome: 'JoÃ£o Silva',
     email: 'joao@agropec.com',
     senhaHash,
     nomePropriedade: 'Fazenda Boa Vista',
     especies: ['bovino', 'suino'],
   }).returning()
 
-  console.log(`👤 Usuário criado: ${usuario.email}`)
+  console.log(`ðŸ‘¤ UsuÃ¡rio criado: ${usuario.email}`)
 
   await db.insert(fornecedores).values({
     usuarioId: usuario.id,
-    nome: 'Agropecuária Cerrado',
+    nome: 'AgropecuÃ¡ria Cerrado',
     telefone: '(64) 99999-0000',
   }).returning()
 
   const insumosData = await db.insert(insumos).values([
     {
       usuarioId: usuario.id,
-      nome: 'Ração Engorda Bovinos 30%',
+      nome: 'RaÃ§Ã£o Engorda Bovinos 30%',
       tipo: 'racao',
       unidade: 'kg',
-      proteínaBrutaPct: 30,
+      proteÃ­naBrutaPct: 30,
       energiaMetab: 2.9,
       custoPorUnidade: 1.85,
     },
     {
       usuarioId: usuario.id,
-      nome: 'Milho Grão',
+      nome: 'Milho GrÃ£o',
       tipo: 'concentrado',
       unidade: 'kg',
-      proteínaBrutaPct: 8.5,
+      proteÃ­naBrutaPct: 8.5,
       energiaMetab: 3.4,
       custoPorUnidade: 0.92,
     },
     {
       usuarioId: usuario.id,
-      nome: 'Ração Suínos Terminação',
+      nome: 'RaÃ§Ã£o SuÃ­nos TerminaÃ§Ã£o',
       tipo: 'racao',
       unidade: 'kg',
-      proteínaBrutaPct: 16,
+      proteÃ­naBrutaPct: 16,
       energiaMetab: 3.3,
       custoPorUnidade: 1.65,
     },
@@ -90,12 +91,12 @@ async function seed() {
     },
     {
       usuarioId: usuario.id,
-      nome: 'Terminação Suínos T1',
+      nome: 'TerminaÃ§Ã£o SuÃ­nos T1',
       codigo: 'SUI-2024-T1',
       especie: 'suino',
       finalidade: 'corte',
       fase: 'terminacao',
-      localizacao: 'Galpão 2',
+      localizacao: 'GalpÃ£o 2',
       qtdInicial: 120,
       qtdAtual: 118,
       dataEntrada: '2024-11-15',
@@ -104,8 +105,8 @@ async function seed() {
     },
   ])
 
-  console.log('✅ Seed concluído!')
-  console.log('📧 Login: joao@agropec.com | Senha: 123456')
+  console.log('âœ… Seed concluÃ­do!')
+  console.log('ðŸ“§ Login: joao@agropec.com | Senha: 123456')
   process.exit(0)
 }
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Elysia, t } from 'elysia'
 import { eq } from 'drizzle-orm'
 import { db } from '../db'

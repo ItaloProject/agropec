@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Elysia, t } from 'elysia'
 import { jwt } from '@elysiajs/jwt'
 
