@@ -1,22 +1,22 @@
 // @ts-nocheck
-import { createClient } from '@libsql/client'
-import { drizzle } from 'drizzle-orm/libsql'
+import { createClient } from '@libsql/client/web'
+import { drizzle } from 'drizzle-orm/libsql/web'
 import * as schema from './schema'
 
-// Local dev: file:agropec.db | Production: TURSO_URL
-const client = createClient(
-  process.env.TURSO_URL
-    ? { url: process.env.TURSO_URL, authToken: process.env.TURSO_TOKEN }
-    : { url: 'file:agropec.db' }
-)
-
-// PRAGMAs só fazem sentido no arquivo local; via HTTP (Turso) falham e
-// derrubariam a função serverless com uma rejection não tratada no import.
+// Usamos o entrypoint /web (puro HTTP) em vez do padrão: o padrão puxa o
+// pacote nativo `libsql`, que quebra ao ser empacotado para serverless
+// ("Dynamic require of path is not supported"). Como consequência a conexão
+// é sempre remota — não há mais fallback para arquivo local.
 if (!process.env.TURSO_URL) {
-  client
-    .executeMultiple('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;')
-    .catch((err) => console.error('Falha ao aplicar PRAGMAs:', err))
+  throw new Error(
+    'TURSO_URL não definida. Configure TURSO_URL e TURSO_TOKEN no .env (local) ou nas variáveis de ambiente do deploy.'
+  )
 }
+
+const client = createClient({
+  url: process.env.TURSO_URL,
+  authToken: process.env.TURSO_TOKEN,
+})
 
 export const db = drizzle(client, { schema })
 export { client as sqlite }
