@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Elysia, t } from 'elysia'
 import { eq } from 'drizzle-orm'
+import bcrypt from 'bcryptjs'
 import { db } from '../db'
 import { usuarios } from '../db/schema'
 import { jwtPlugin } from '../middleware/auth'
@@ -20,7 +21,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
         return { erro: 'E-mail já cadastrado' }
       }
 
-      const senhaHash = await Bun.password.hash(body.senha)
+      const senhaHash = await bcrypt.hash(body.senha, 10)
       const [usuario] = await db
         .insert(usuarios)
         .values({
@@ -58,7 +59,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
         return { erro: 'Credenciais inválidas' }
       }
 
-      const senhaValida = await Bun.password.verify(body.senha, usuario.senhaHash)
+      const senhaValida = await bcrypt.compare(body.senha, usuario.senhaHash)
       if (!senhaValida) {
         set.status = 401
         return { erro: 'Credenciais inválidas' }

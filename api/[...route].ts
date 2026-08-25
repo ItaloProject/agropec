@@ -1,6 +1,6 @@
 import { app } from '../backend/src/app'
 
-export const config = { runtime: 'nodejs' }
+export const config = { maxDuration: 30 }
 
 export default function handler(request: Request) {
   // Strip /api prefix before forwarding to Elysia
