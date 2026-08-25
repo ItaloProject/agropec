@@ -5,8 +5,7 @@
     "moduleResolution": "bundler",
     "strict": false,
     "esModuleInterop": true,
-    "skipLibCheck": true
-  },
-  "include": ["api/**/*"],
-  "references": [{ "path": "./backend" }]
+    "skipLibCheck": true,
+    "noEmitOnError": false
+  }
 }
