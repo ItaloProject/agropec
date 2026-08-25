@@ -2,6 +2,9 @@
   "name": "agropec",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "build:api": "esbuild backend/src/app.ts --bundle --platform=node --format=esm --target=node18 --outfile=api/_app.js --banner:js=\"import{createRequire as __cr}from'module';const require=__cr(import.meta.url);\""
+  },
   "dependencies": {
     "elysia": "^1.1.0",
     "@elysiajs/cors": "^1.1.0",
@@ -12,6 +15,7 @@
     "bcryptjs": "^3.0.3"
   },
   "devDependencies": {
+    "esbuild": "^0.24.0",
     "typescript": "^5.0.0",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^18.0.0"

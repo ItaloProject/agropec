@@ -1,7 +1,9 @@
 // @ts-nocheck
-// O import precisa ser estático: com import dinâmico o Vercel não rastreia
-// backend/src e o pacote da função sai sem esses arquivos.
-import { app } from '../backend/src/app'
+// Importa o bundle gerado por `npm run build:api` (esbuild) em vez de
+// backend/src direto: o Vercel copia os .ts do backend sem compilar e os
+// imports sem extensão não resolvem em ESM. O import é estático para que
+// o rastreador de dependências inclua o arquivo no pacote da função.
+import { app } from './_app.js'
 
 export const config = { maxDuration: 30 }
 

@@ -6,3 +6,7 @@ node_modules/
 dist/
 .quasar/
 bun.lockb
+
+# artefatos de build da API (gerados por npm run build:api)
+api/_app.js
+api/index.js
