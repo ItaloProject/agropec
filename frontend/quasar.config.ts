@@ -4,7 +4,7 @@ export default configure(function (/* ctx */) {
   return {
     eslint: { fix: false },
 
-    boot: ['pinia', 'axios'],
+    boot: ['pinia', 'axios', 'pwa-update'],
 
     css: ['app.scss'],
 
@@ -26,6 +26,9 @@ export default configure(function (/* ctx */) {
     devServer: {
       open: false,
       port: 9000,
+      fs: {
+        allow: ['..', 'C:/agro-control/node_modules/.bun'],
+      },
       proxy: {
         '/api': {
           target: 'http://localhost:3001',
@@ -53,6 +56,10 @@ export default configure(function (/* ctx */) {
       swFilename: 'sw.js',
       manifestFilename: 'manifest.json',
       useCredentialsForManifestFetch: false,
+      workboxOptions: {
+        skipWaiting: false,
+        clientsClaim: true,
+      },
     },
   }
 })

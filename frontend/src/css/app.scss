@@ -24,9 +24,10 @@ $bg        : #f9fbe7;
 
 * { box-sizing: border-box; }
 
-// Padrão caixa alta em botões — apenas no label (não nos ícones de ligature)
-.q-btn .q-btn__content .block { text-transform: uppercase; letter-spacing: .3px; }
+// Tudo em maiúsculas — exceto ícones (ligatures)
+body, input, textarea, select, button { text-transform: uppercase; }
 .q-icon { text-transform: none !important; }
+// Emojis e placeholders não devem ser afetados visualmente (já são neutros)
 
 body {
   background: $bg;
