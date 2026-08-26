@@ -24,9 +24,12 @@ $bg        : #f9fbe7;
 
 * { box-sizing: border-box; }
 
-// Tudo em maiúsculas — exceto ícones (ligatures)
+// Tudo em maiúsculas — exceto ícones (ligatures) e campos sensíveis
 body, input, textarea, select, button { text-transform: uppercase; }
 .q-icon { text-transform: none !important; }
+input[type="email"],
+input[type="password"],
+input[type="url"] { text-transform: none !important; }
 // Emojis e placeholders não devem ser afetados visualmente (já são neutros)
 
 body {

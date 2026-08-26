@@ -47,6 +47,24 @@
 
     <!-- Painel direito — formulário -->
     <div class="form-panel">
+      <!-- Logo mobile (só aparece no mobile) -->
+      <div class="mobile-brand">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="52" height="52">
+          <rect width="100" height="100" rx="22" fill="rgba(255,255,255,0.15)"/>
+          <line x1="50" y1="82" x2="50" y2="20" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+          <ellipse cx="50" cy="22" rx="7" ry="10" fill="#f9a825"/>
+          <ellipse cx="37" cy="34" rx="6" ry="9" fill="#f9a825" transform="rotate(-30 37 34)"/>
+          <ellipse cx="33" cy="50" rx="6" ry="9" fill="#f9a825" transform="rotate(-25 33 50)"/>
+          <ellipse cx="63" cy="34" rx="6" ry="9" fill="#f9a825" transform="rotate(30 63 34)"/>
+          <ellipse cx="67" cy="50" rx="6" ry="9" fill="#f9a825" transform="rotate(25 67 50)"/>
+          <path d="M50 82 Q40 88 32 90" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+        </svg>
+        <div class="mobile-brand-text">
+          <div class="mobile-brand-name">AGROPEC</div>
+          <div class="mobile-brand-sub">GESTÃO DE CRIAÇÃO ANIMAL</div>
+        </div>
+      </div>
+
       <div class="form-container">
         <div class="form-header">
           <h2 class="form-title">{{ tab === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta' }}</h2>
@@ -360,23 +378,67 @@ async function fazerCadastro() {
 /* ── Painel direito ── */
 .form-panel {
   flex: 0 0 100%;
-  background: #fafafa;
+  background: linear-gradient(145deg, #0a3d0a 0%, #1b5e20 45%, #2e7d32 100%);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 24px;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: 100vh;
   overflow-y: auto;
 }
 @media (min-width: 768px) {
   .form-panel {
     flex: 0 0 480px;
     background: #ffffff;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    min-height: unset;
   }
+}
+
+/* ── Área da marca mobile ── */
+.mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 52px 28px 32px;
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .mobile-brand { display: none; }
+}
+
+.mobile-brand-text { color: #fff; }
+.mobile-brand-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+.mobile-brand-sub {
+  font-size: 0.65rem;
+  letter-spacing: 1.5px;
+  opacity: 0.8;
+  margin-top: 4px;
 }
 
 .form-container {
   width: 100%;
-  max-width: 380px;
+  background: #ffffff;
+  border-radius: 28px 28px 0 0;
+  padding: 32px 28px 56px;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.25);
+  flex: 1;
+}
+@media (min-width: 768px) {
+  .form-container {
+    max-width: 380px;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    flex: unset;
+  }
 }
 
 /* ── Cabeçalho do formulário ── */
